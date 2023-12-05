@@ -13,7 +13,7 @@ DATASETS = [
 	for buffer in ['medium-expert-v2', 'medium-v2', 'medium-replay-v2']
 ]
 
-LOGBASE = os.path.expanduser('~/logs')
+LOGBASE = os.path.expanduser('./tap_logs')
 TRIAL = '*'
 EXP_NAME = 'plans/defaults/freq1_H1_beam50'
 

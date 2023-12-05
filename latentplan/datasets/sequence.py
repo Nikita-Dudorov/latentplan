@@ -33,7 +33,7 @@ def segment(observations, terminals, max_path_length):
 
     ## pad trajectories to be of equal length
     trajectories_pad = np.zeros((n_trajectories, max_path_length, observation_dim), dtype=trajectories[0].dtype)
-    early_termination = np.zeros((n_trajectories, max_path_length), dtype=np.bool)
+    early_termination = np.zeros((n_trajectories, max_path_length), dtype=np.bool_)
     for i, traj in enumerate(trajectories):
         path_length = path_lengths[i]
         trajectories_pad[i,:path_length] = traj
@@ -43,7 +43,7 @@ def segment(observations, terminals, max_path_length):
 
 class SequenceDataset(torch.utils.data.Dataset):
     def __init__(self, env, sequence_length=250, step=10, discount=0.99, max_path_length=1000,
-                 penalty=None, device='cuda:0', normalize_raw=True, normalize_reward=True, train_portion=1.0, disable_goal=False):
+                 penalty=None, device='cuda', normalize_raw=True, normalize_reward=True, train_portion=1.0, disable_goal=False):
         print(f'[ datasets/sequence ] Sequence length: {sequence_length} | Step: {step} | Max path length: {max_path_length}')
         self.env = env = load_environment(env) if type(env) is str else env
         self.sequence_length = sequence_length
@@ -159,7 +159,7 @@ class SequenceDataset(torch.utils.data.Dataset):
         #self.joined_segmented_tensor = torch.tensor(self.joined_segmented, device=device)
         self.termination_flags = np.concatenate([
             self.termination_flags,
-            np.ones((n_trajectories, sequence_length-1), dtype=np.bool),
+            np.ones((n_trajectories, sequence_length-1), dtype=np.bool_),
         ], axis=1)
 
     def denormalize(self, states, actions, rewards, values):

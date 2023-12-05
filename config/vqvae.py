@@ -2,7 +2,7 @@ from latentplan.utils import watch
 
 #------------------------ base ------------------------#
 
-logbase = '~/logs/'
+logbase = './tap_logs/'
 gpt_expname = 'vae/vq'
 
 ## automatically make experiment names for planning
