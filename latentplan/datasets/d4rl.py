@@ -21,7 +21,9 @@ def suppress_output():
 
 with suppress_output():
     ## d4rl prints out a variety of warnings
-    import d4rl
+    is_atari=True
+    if not is_atari:
+        import d4rl
 
 # def construct_dataloader(dataset, **kwargs):
 #     dataloader = torch.utils.data.DataLoader(dataset, shuffle=True, pin_memory=True, **kwargs)
@@ -62,8 +64,18 @@ def minrl_dataset(dataset):
 
 
 def qlearning_dataset_with_timeouts(env, dataset=None, terminate_on_end=False, disable_goal=False, **kwargs):
+    is_atari = True
     if dataset is None:
-        dataset = env.get_dataset(**kwargs)
+        if not is_atari:
+            dataset = env.get_dataset(**kwargs)
+        else:   
+            from .create_atari_dataset import create_atari_dataset
+            num_buffers=50
+            num_steps=1000  # 500000
+            game='Breakout'
+            trajectories_per_buffer=10
+            data_dir_prefix='/home/nikitad/projects/def-martin4/nikitad/decision-transformer/atari/dqn_replay/'
+            dataset = create_atari_dataset(num_buffers, num_steps, game, data_dir_prefix, trajectories_per_buffer)
 
     N = dataset['rewards'].shape[0]
     obs_ = []
@@ -213,10 +225,14 @@ def softmax(x):
 
 
 def load_environment(name):
+    is_atari = True
     with suppress_output():
         wrapped_env = gym.make(name)
     env = wrapped_env.unwrapped
-    env.max_episode_steps = wrapped_env._max_episode_steps
+    if not is_atari:
+        env.max_episode_steps = wrapped_env._max_episode_steps
+    else:
+        env.max_episode_steps = env.spec.kwargs['max_num_frames_per_episode']
 
     env.name = name
     return env

@@ -175,7 +175,7 @@ class Renderer:
         mse = ((sequence[:, :self.observation_dim] - rollout_states) ** 2).mean()
         return mse
 
-    def render_plan(self, savepath, sequence, state, fps=30, save=True):
+    def render_plan(self, savepath, sequence, state, fps=30, save=False):
         '''
             state : np.array[ observation_dim ]
             sequence : np.array[ horizon x transition_dim ]
@@ -205,7 +205,7 @@ class Renderer:
 
 
 
-    def render_real(self, savepath, sequence, state, fps=30, save=True):
+    def render_real(self, savepath, sequence, state, fps=30, save=False):
         if len(sequence) == 1:
             return
 
@@ -219,13 +219,15 @@ class Renderer:
             self.renders(rollout_states),
         ]
 
-        save_videos(savepath, *videos, fps=fps)
+        if save == True:
+            save_videos(savepath, *videos, fps=fps)
         mse = ((sequence[:, :self.observation_dim] - rollout_obs) ** 2).mean()
         return videos, mse
 
-    def render_rollout(self, savepath, states, **video_kwargs):
+    def render_rollout(self, savepath, states, save=False, **video_kwargs):
         images = self(states)
-        save_video(savepath, images, **video_kwargs)
+        if save == True:
+            save_video(savepath, images, **video_kwargs)
 
 class KitchenRenderer:
 

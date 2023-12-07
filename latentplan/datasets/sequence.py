@@ -51,11 +51,18 @@ class SequenceDataset(torch.utils.data.Dataset):
         self.max_path_length = max_path_length
         self.device = device
         self.disable_goal = disable_goal
+        is_atari = True
         
         print(f'[ datasets/sequence ] Loading...', end=' ', flush=True)
         if 'MineRL' in env.name:
             raise ValueError()
-        dataset = qlearning_dataset_with_timeouts(env.unwrapped, terminate_on_end=True, disable_goal=disable_goal)
+        
+        if not is_atari:
+            dataset = qlearning_dataset_with_timeouts(env.unwrapped, terminate_on_end=True, disable_goal=disable_goal)
+        else:
+            terminate_on_end = True
+            disable_goal = True  # Whats is this?
+            dataset = qlearning_dataset_with_timeouts(env.unwrapped, terminate_on_end=terminate_on_end, disable_goal=disable_goal)
         # dataset = qlearning_dataset_with_timeouts(env, dataset=None, terminate_on_end=False)
         print('✓')
 
@@ -71,6 +78,12 @@ class SequenceDataset(torch.utils.data.Dataset):
         terminals = dataset['terminals']
         realterminals = dataset['realterminals']
 
+        if is_atari:
+            observations = observations.astype(np.float32)
+            observations /= 255
+            # observations = CNN(observations)
+            # actions = self.one_hot(actions)
+            normalize_raw = False
 
         self.normalized_raw = normalize_raw
         self.normalize_reward = normalize_reward
