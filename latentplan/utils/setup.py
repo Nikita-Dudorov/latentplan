@@ -58,7 +58,7 @@ class Parser(Tap):
             args.obs_shape = [3, 64, 64]
         elif args.dataset in ["Breakout", "Pong", "Qbert", "Seaquest"]:
             args.task_type = "atari"
-            args.obs_shape = [4, 84, 84]
+            args.obs_shape = [512]
 
         return args
 

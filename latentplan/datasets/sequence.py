@@ -81,8 +81,8 @@ class SequenceDataset(torch.utils.data.Dataset):
         if is_atari:
             observations = observations.astype(np.float32)
             observations /= 255
-            # observations = CNN(observations)
-            # actions = self.one_hot(actions)
+            # observations = self.image_encoder(torch.from_numpy(observations)).numpy()
+            actions = self.one_hot(actions)
             normalize_raw = False
 
         self.normalized_raw = normalize_raw

@@ -93,10 +93,7 @@ def create_atari_dataset(num_buffers, num_steps, game, data_dir_prefix, trajecto
         'terminals': terminals,
         'timeouts': timeouts,
     }
-    import json
-    with open('atari_debug_dataset.json', 'w') as f:
-        json_dataset = {}
-        for k, v in dataset.items():
-            json_dataset[k] = v.tolist() if isinstance(v, np.ndarray) else v
-        json.dump(json_dataset, f)
+    # import pickle
+    # with open('atari_debug.pickle', 'wb') as f:
+    #     pickle.dump(dataset, f)
     return dataset
