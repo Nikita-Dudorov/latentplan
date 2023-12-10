@@ -1,4 +1,6 @@
 wandb/
+vae_logs/
+vae_checkpoints/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
