@@ -57,12 +57,7 @@ class SequenceDataset(torch.utils.data.Dataset):
         if 'MineRL' in env.name:
             raise ValueError()
         
-        if not is_atari:
-            dataset = qlearning_dataset_with_timeouts(env.unwrapped, terminate_on_end=True, disable_goal=disable_goal)
-        else:
-            terminate_on_end = True
-            disable_goal = True  # Whats is this?
-            dataset = qlearning_dataset_with_timeouts(env.unwrapped, terminate_on_end=terminate_on_end, disable_goal=disable_goal)
+        dataset = qlearning_dataset_with_timeouts(env.unwrapped, terminate_on_end=True, disable_goal=disable_goal)
         # dataset = qlearning_dataset_with_timeouts(env, dataset=None, terminate_on_end=False)
         print('✓')
 
@@ -81,9 +76,12 @@ class SequenceDataset(torch.utils.data.Dataset):
         if is_atari:
             observations = observations.astype(np.float32)
             observations /= 255
-            # observations = self.image_encoder(torch.from_numpy(observations)).numpy()
-            actions = self.one_hot(actions)
-            normalize_raw = False
+            print(f"*** Atari frames: {observations.shape}***")
+            observations = atari_obs_embed(observations, device)
+            print(f"*** Atari frame embeddings: {observations.shape}***")
+
+            actions = actions.astype(np.int32)
+            actions = one_hot(actions, len(np.unique(actions)))
 
         self.normalized_raw = normalize_raw
         self.normalize_reward = normalize_reward
@@ -314,3 +312,23 @@ class SequenceDataset(torch.utils.data.Dataset):
 
 def one_hot(a, num_classes):
   return np.squeeze(np.eye(num_classes, dtype=np.uint8)[a.reshape(-1)])
+
+def atari_obs_embed(observations, device):
+    from ..atari.vae import VAE 
+    checkpoint_path = '/home/nikita/Projects/RL/latentplan/latentplan/atari/vae_checkpoints/VAEmodel_20.pkl'
+    latent_dim = 512
+    b_size = 128
+    obs_encoder = VAE(latent_dim)
+    obs_encoder.load_state_dict(torch.load(checkpoint_path, map_location=torch.device(device)))
+    obs_encoder.to(device)
+    obs_encoder.eval()
+
+    n_oob = len(observations) % b_size
+    b = torch.from_numpy(observations[-n_oob:]).to(device)
+    obs_emb = obs_encoder.get_latent(b).numpy()
+    for i in range(len(observations) // b_size):
+        b = torch.from_numpy(observations[n_oob + i*b_size : n_oob + (i+1)*b_size]).to(device)
+        embeddings = obs_encoder.get_latent(b).numpy()
+        obs_emb = np.vstack((obs_emb, embeddings))
+
+    return obs_emb

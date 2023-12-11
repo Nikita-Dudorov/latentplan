@@ -101,6 +101,19 @@ base = {
 
 }
 
+#------------------------ atari ------------------------#
+
+Breakout = {
+    'train': {
+        "max_path_length": 5000,  # based on dataset longest trajectory
+        "normalize": False,  # TODO not clear what exactly we normalize
+        "disable_goal": True,  # TODO what is this
+    },
+    'plan': {
+        'horizon': 24,
+    }
+}
+
 #------------------------ locomotion ------------------------#
 
 hammer_cloned_v0 = hammer_human_v0 = human_expert_v0 = {

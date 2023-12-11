@@ -15,15 +15,14 @@
 
 from __future__ import print_function
 import torch.utils.data
-from scipy import misc
 from torch import optim
 from torchvision.utils import save_image
 from vae import VAE
 import numpy as np
-import pickle
 import time
 import random
 import os
+import wandb
 
 
 def loss_function(recon_x, x, mu, logvar):
@@ -46,12 +45,11 @@ def get_batch(data, b_size, device, process=True):
     n_batches = len(data) // b_size
     for i in range(n_batches):
         batch = data[i*b_size : (i+1)*b_size]
-        # batch = np.random.rand(128,3,128,128).astype(np.float32)
         yield torch.from_numpy(batch).to(device)
 
 
 def get_dataset():
-    DEBUG = False
+    DEBUG = True
     if DEBUG:
         import pickle
         with open('/home/nikita/Projects/RL/decision-transformer/atari/dqn_replay/Breakout/atari_debug.pickle', 'rb') as f:
@@ -69,14 +67,21 @@ def get_dataset():
     return np.array(dataset)
     
 
-def main():
-    im_size = 84
-    channels = 4
-    device = 'cuda'
-    train_epoch = 40
-    batch_size = 128
-    z_size = 512
-    lr = 0.0005
+def main(args):
+    im_size = args.im_size
+    channels = args.channels
+    device = args.device
+    n_epoch = args.n_epoch
+    batch_size = args.batch_size
+    z_size = args.z_size
+    lr = args.lr
+
+    wandb.init(
+        project="VAE",
+        name="VAE" + '-' + str(random.randint(int(1e4), int(1e5))), 
+        config=args, 
+        mode='offline',
+    )
 
     vae = VAE(zsize=z_size)
     vae.weight_init(mean=0, std=0.02)
@@ -84,12 +89,12 @@ def main():
 
     vae_optimizer = optim.Adam(vae.parameters(), lr=lr, betas=(0.5, 0.999), weight_decay=1e-5)
  
-    sample1 = torch.randn(im_size, z_size)
+    sample1 = torch.randn(im_size, z_size).to(device)
 
     data_train = get_dataset()
     print("Train set size:", len(data_train))
 
-    for epoch in range(train_epoch):
+    for epoch in range(n_epoch):
         vae.train()
 
         batches = get_batch(data_train, batch_size, device)
@@ -131,7 +136,8 @@ def main():
                 rec_loss /= m
                 kl_loss /= m
                 print('\n[%d/%d] - ptime: %.2f, rec loss: %.9f, KL loss: %.9f' % (
-                    (epoch + 1), train_epoch, per_epoch_ptime, rec_loss, kl_loss))
+                    (epoch + 1), n_epoch, per_epoch_ptime, rec_loss, kl_loss))
+                wandb.log({'rec_loss': rec_loss, 'kl_loss': kl_loss})
                 rec_loss = 0
                 kl_loss = 0
                 with torch.no_grad():
@@ -153,4 +159,15 @@ def main():
     print("Training finish!")
 
 if __name__ == '__main__':
-    main()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--im_size", type=int, default=84)
+    parser.add_argument("--channels", type=int, default=4)
+    parser.add_argument("--device", type=str, default='cpu')
+    parser.add_argument("--n_epoch", type=int, default=40)
+    parser.add_argument("--batch_size", type=int, default=128)
+    parser.add_argument("--z_size", type=int, default=512)
+    parser.add_argument("--lr", type=float, default=0.0005)    
+    args = parser.parse_args()
+
+    main(args)

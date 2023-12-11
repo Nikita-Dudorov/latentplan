@@ -1,4 +1,5 @@
 wandb/
+tap_logs/
 vae_logs/
 vae_checkpoints/
 

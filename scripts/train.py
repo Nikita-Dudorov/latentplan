@@ -45,7 +45,8 @@ dataset_config = utils.Config(
     disable_goal=args.disable_goal,
     normalize_raw=args.normalize,
     normalize_reward=args.normalize_reward,
-    max_path_length=int(args.max_path_length)
+    max_path_length=int(args.max_path_length),
+    device=args.device,
 )
 
 
@@ -53,6 +54,8 @@ dataset = dataset_config()
 obs_dim = dataset.observation_dim
 act_dim = dataset.action_dim
 if args.task_type == "locomotion":
+    transition_dim = obs_dim+act_dim+3
+elif args.task_type == "atari":
     transition_dim = obs_dim+act_dim+3
 else:
     transition_dim = 128+act_dim+3

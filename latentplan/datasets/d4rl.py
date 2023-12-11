@@ -128,6 +128,7 @@ def qlearning_dataset_with_timeouts(env, dataset=None, terminate_on_end=False, d
         realdone_.append(realdone_bool)
         episode_step += 1
 
+    print(f"*** prepared dataset of size {len(obs_)} ***")
     return {
         'observations': np.array(obs_),
         'actions': np.array(action_),
@@ -238,7 +239,11 @@ def load_environment(name):
     if not is_atari:
         env.max_episode_steps = wrapped_env._max_episode_steps
     else:
-        env.max_episode_steps = env.spec.kwargs['max_num_frames_per_episode']
+        try:
+            env.max_episode_steps = env.spec.max_episode_steps
+        except:
+            print("WARNING: failed to get max episode steps for Atari, using default value")
+            env.max_episode_steps = 10000  # hard-code for Breakout
 
     env.name = name
     return env
