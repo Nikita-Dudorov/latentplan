@@ -21,9 +21,10 @@ def suppress_output():
 
 with suppress_output():
     ## d4rl prints out a variety of warnings
-    is_atari=True
-    if not is_atari:
+    try:
         import d4rl
+    except:
+        print("Failed to import D4RL")
 
 # def construct_dataloader(dataset, **kwargs):
 #     dataloader = torch.utils.data.DataLoader(dataset, shuffle=True, pin_memory=True, **kwargs)
@@ -63,9 +64,8 @@ def minrl_dataset(dataset):
 
 
 
-def qlearning_dataset_with_timeouts(env, dataset=None, terminate_on_end=False, disable_goal=False, **kwargs):
-    is_atari = True
-    DEBUG = True
+def qlearning_dataset_with_timeouts(env, dataset=None, terminate_on_end=False, disable_goal=False, is_atari=False, **kwargs):
+    DEBUG = False
     if dataset is None:
         if not is_atari:
             dataset = env.get_dataset(**kwargs)
@@ -232,18 +232,14 @@ def softmax(x):
 
 
 def load_environment(name):
-    is_atari = True
     with suppress_output():
         wrapped_env = gym.make(name)
     env = wrapped_env.unwrapped
-    if not is_atari:
-        env.max_episode_steps = wrapped_env._max_episode_steps
-    else:
-        try:
-            env.max_episode_steps = env.spec.max_episode_steps
-        except:
-            print("WARNING: failed to get max episode steps for Atari, using default value")
-            env.max_episode_steps = 10000  # hard-code for Breakout
+    try:
+        env.max_episode_steps = env.spec.max_episode_steps
+    except:
+        print("WARNING: failed to get max episode steps, using default value")
+        env.max_episode_steps = 10000  # hard-code for Breakout
 
     env.name = name
     return env

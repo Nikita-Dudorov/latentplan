@@ -1,5 +1,5 @@
 import numpy as np
-from fixed_replay_buffer import FixedReplayBuffer
+from .fixed_replay_buffer import FixedReplayBuffer
 
 def create_atari_dataset(num_buffers, num_steps, game, data_dir_prefix, trajectories_per_buffer):
     # -- load data from memory (make more efficient)

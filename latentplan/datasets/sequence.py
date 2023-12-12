@@ -51,13 +51,13 @@ class SequenceDataset(torch.utils.data.Dataset):
         self.max_path_length = max_path_length
         self.device = device
         self.disable_goal = disable_goal
-        is_atari = True
+        is_atari = env.name in ['Breakout', 'Pong', 'Qbert', 'Seaquest']
         
         print(f'[ datasets/sequence ] Loading...', end=' ', flush=True)
         if 'MineRL' in env.name:
             raise ValueError()
         
-        dataset = qlearning_dataset_with_timeouts(env.unwrapped, terminate_on_end=True, disable_goal=disable_goal)
+        dataset = qlearning_dataset_with_timeouts(env.unwrapped, terminate_on_end=True, disable_goal=disable_goal, is_atari=is_atari)
         # dataset = qlearning_dataset_with_timeouts(env, dataset=None, terminate_on_end=False)
         print('✓')
 
@@ -315,7 +315,7 @@ def one_hot(a, num_classes):
 
 def atari_obs_embed(observations, device):
     from ..atari.vae import VAE 
-    checkpoint_path = '/home/nikita/Projects/RL/latentplan/latentplan/atari/vae_checkpoints/VAEmodel_20.pkl'
+    checkpoint_path = '/home/nikitad/projects/def-martin4/nikitad/vae_checkpoints/VAEmodel_20.pkl'
     latent_dim = 512
     b_size = 128
     obs_encoder = VAE(latent_dim)
@@ -325,10 +325,10 @@ def atari_obs_embed(observations, device):
 
     n_oob = len(observations) % b_size
     b = torch.from_numpy(observations[-n_oob:]).to(device)
-    obs_emb = obs_encoder.get_latent(b).numpy()
+    obs_emb = obs_encoder.get_latent(b).cpu().numpy()
     for i in range(len(observations) // b_size):
         b = torch.from_numpy(observations[n_oob + i*b_size : n_oob + (i+1)*b_size]).to(device)
-        embeddings = obs_encoder.get_latent(b).numpy()
+        embeddings = obs_encoder.get_latent(b).cpu().numpy()
         obs_emb = np.vstack((obs_emb, embeddings))
 
     return obs_emb
