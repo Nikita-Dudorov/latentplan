@@ -1,4 +1,8 @@
 import numpy as np
+import torch
+
+from latentplan.atari.atari_dataset import atari_obs_embed
+
 
 def kitchen_preprocess_fn(observations):
     ## keep first 30 dimensions of 60-dimension observations
@@ -14,6 +18,17 @@ def ant_preprocess_fn(observations):
     assert observations.shape[1] == qpos_dim + qvel_dim + cfrc_dim
     keep = observations[:, :qpos_dim + qvel_dim]
     return keep
+
+def breakout_preprocess_fn(observations):
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    # print(f"*** Atari frames: {observations.shape}***")
+    if observations.ndim != 4:  # add batch axis
+        observations = observations.reshape((1,) + observations.shape) 
+    observations = observations.astype(np.float32)
+    observations /= 255
+    observations = atari_obs_embed(observations, device)
+    # print(f"*** Atari frame embeddings: {observations.shape}***")
+    return observations
 
 def vmap(fn):
 
@@ -51,6 +66,7 @@ preprocess_functions = {
     'ant-medium-replay-v2': vmap(ant_preprocess_fn),
     'ant-medium-v2': vmap(ant_preprocess_fn),
     'ant-random-v2': vmap(ant_preprocess_fn),
+    'Breakout': vmap(breakout_preprocess_fn),
 }
 
 dataset_preprocess_functions = {

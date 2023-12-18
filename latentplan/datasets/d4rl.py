@@ -8,6 +8,7 @@ from contextlib import (
     redirect_stderr,
     redirect_stdout,
 )
+from latentplan.atari.atari_env import AtariEnv, AtariArgs
 
 @contextmanager
 def suppress_output():
@@ -65,14 +66,14 @@ def minrl_dataset(dataset):
 
 
 def qlearning_dataset_with_timeouts(env, dataset=None, terminate_on_end=False, disable_goal=False, is_atari=False, **kwargs):
-    DEBUG = False
+    DEBUG = True
     if dataset is None:
         if not is_atari:
             dataset = env.get_dataset(**kwargs)
         else:   
             if DEBUG:
                 import pickle
-                with open('/home/nikita/Projects/RL/decision-transformer/atari/dqn_replay/Breakout/atari_debug.pickle', 'rb') as f:
+                with open('/home/nikitad/projects/def-martin4/nikitad/decision-transformer/atari/dqn_replay/Breakout/atari_debug.pickle', 'rb') as f:
                     dataset = pickle.load(f)
             else:
                 from ..atari.atari_dataset import create_atari_dataset
@@ -231,15 +232,19 @@ def softmax(x):
     return e_x / e_x.sum(axis=0)
 
 
-def load_environment(name):
-    with suppress_output():
-        wrapped_env = gym.make(name)
-    env = wrapped_env.unwrapped
-    try:
-        env.max_episode_steps = env.spec.max_episode_steps
-    except:
-        print("WARNING: failed to get max episode steps, using default value")
+def load_environment(name, seed=123):
+    is_atari = name in ['Breakout', 'Pong', 'Qbert', 'Seaquest']
+    
+    if is_atari:
+        env_args = AtariArgs(game=name, seed=seed)
+        env = AtariEnv(env_args)
         env.max_episode_steps = 10000  # hard-code for Breakout
+        env.eval()
+    else:
+        with suppress_output():
+            wrapped_env = gym.make(name)
+        env = wrapped_env.unwrapped
+        env.max_episode_steps = env.spec.max_episode_steps
 
     env.name = name
     return env
