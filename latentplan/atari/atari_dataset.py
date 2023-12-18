@@ -1,5 +1,9 @@
 import numpy as np
+import torch
+
 from .fixed_replay_buffer import FixedReplayBuffer
+from .vae import VAE
+
 
 def create_atari_dataset(num_buffers, num_steps, game, data_dir_prefix, trajectories_per_buffer):
     # -- load data from memory (make more efficient)
@@ -97,3 +101,23 @@ def create_atari_dataset(num_buffers, num_steps, game, data_dir_prefix, trajecto
     # with open('atari_debug.pickle', 'wb') as f:
     #     pickle.dump(dataset, f)
     return dataset
+
+
+def atari_obs_embed(observations, device):
+    checkpoint_path = '/home/nikitad/projects/def-martin4/nikitad/vae_checkpoints/VAEmodel_20.pkl'
+    latent_dim = 512
+    b_size = 128
+    obs_encoder = VAE(latent_dim)
+    obs_encoder.load_state_dict(torch.load(checkpoint_path, map_location=torch.device(device)))
+    obs_encoder.to(device)
+    obs_encoder.eval()
+
+    n_oob = len(observations) % b_size
+    b = torch.from_numpy(observations[-n_oob:]).to(device)
+    obs_emb = obs_encoder.get_latent(b).cpu().numpy()
+    for i in range(len(observations) // b_size):
+        b = torch.from_numpy(observations[n_oob + i*b_size : n_oob + (i+1)*b_size]).to(device)
+        embeddings = obs_encoder.get_latent(b).cpu().numpy()
+        obs_emb = np.vstack((obs_emb, embeddings))
+
+    return obs_emb
