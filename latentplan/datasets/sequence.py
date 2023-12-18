@@ -57,7 +57,7 @@ class SequenceDataset(torch.utils.data.Dataset):
         if 'MineRL' in env.name:
             raise ValueError()
         
-        dataset = qlearning_dataset_with_timeouts(env, terminate_on_end=True, disable_goal=disable_goal, is_atari=is_atari)
+        dataset = qlearning_dataset_with_timeouts(env, terminate_on_end=True, disable_goal=disable_goal)
         # dataset = qlearning_dataset_with_timeouts(env, dataset=None, terminate_on_end=False)
         print('✓')
 

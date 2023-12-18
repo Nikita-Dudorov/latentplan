@@ -65,24 +65,9 @@ def minrl_dataset(dataset):
 
 
 
-def qlearning_dataset_with_timeouts(env, dataset=None, terminate_on_end=False, disable_goal=False, is_atari=False, **kwargs):
-    DEBUG = True
+def qlearning_dataset_with_timeouts(env, dataset=None, terminate_on_end=False, disable_goal=False, **kwargs):
     if dataset is None:
-        if not is_atari:
-            dataset = env.get_dataset(**kwargs)
-        else:   
-            if DEBUG:
-                import pickle
-                with open('/home/nikitad/projects/def-martin4/nikitad/decision-transformer/atari/dqn_replay/Breakout/atari_debug.pickle', 'rb') as f:
-                    dataset = pickle.load(f)
-            else:
-                from ..atari.atari_dataset import create_atari_dataset
-                num_buffers=50
-                num_steps=500000
-                game='Breakout'
-                trajectories_per_buffer=10
-                data_dir_prefix='/home/nikitad/projects/def-martin4/nikitad/decision-transformer/atari/dqn_replay/'
-                dataset = create_atari_dataset(num_buffers, num_steps, game, data_dir_prefix, trajectories_per_buffer)
+        dataset = env.get_dataset(**kwargs)
 
     N = dataset['rewards'].shape[0]
     obs_ = []
