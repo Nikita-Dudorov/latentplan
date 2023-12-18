@@ -38,15 +38,18 @@ try:
     args.prob_weight = float(args.prob_weight)
 except:
     args.prob_weight = 5e2
+is_atari = args.task_type == 'atari'
 
 
 #######################
 ####### models ########
 #######################
 
-env = datasets.load_environment(args.dataset)
+env = datasets.load_environment(args.dataset, seed=np.random.randint(100,1000))
 dataset = utils.load_from_config(args.logbase, args.dataset, args.exp_name,
         'data_config.pkl')
+import torch
+dataset.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
 gpt, gpt_epoch = utils.load_model(args.logbase, args.dataset, args.exp_name,
@@ -91,6 +94,8 @@ if "antmaze" in env.name:
     else:
         observation = np.concatenate([observation, env.target_goal])
         rollout = [np.concatenate([env.state_vector().copy(), env.target_goal])]
+elif is_atari:
+    rollout = [observation.copy()]
 else:
     rollout = [np.concatenate([env.state_vector().copy()])]
 
@@ -102,8 +107,11 @@ T = env.max_episode_steps
 gpt.eval()
 for t in range(T):
 
+    if not is_atari:
+        state = env.state_vector()
+    else:
+        state = observation.copy()
     observation = preprocess_fn(observation)
-    state = env.state_vector()
 
 
     if dataset.normalized_raw:
@@ -184,12 +192,16 @@ for t in range(T):
 
     feature_dim = dataset.observation_dim
     action = extract_actions(sequence_recon, feature_dim, action_dim, t=0)
+    if is_atari:
+        # env_action = 1 if t == 0 else np.argmax(action)  # pick action with highest value
+        env_action = action / action.sum()  # normalize to get probabilities
+        env_action = np.random.choice(np.arange(len(env_action)), p=env_action)  # sample from categorical distribution
     if dataset.normalized_raw:
         action = dataset.denormalize_actions(action)
         sequence_recon = dataset.denormalize_joined(sequence_recon)
 
     ## execute action in environment
-    next_observation, reward, terminal, _ = env.step(action)
+    next_observation, reward, terminal, _ = env.step(env_action)
 
     if "antmaze" in env.name:
         if dataset.disable_goal:
@@ -201,7 +213,10 @@ for t in range(T):
     ## update return
     total_reward += reward
     discount_return += reward* discount**(t)
-    score = env.get_normalized_score(total_reward)
+    if not is_atari:
+        score = env.get_normalized_score(total_reward)
+    else:
+        score = total_reward
 
     rollout.append(state.copy())
     context = update_context(observation, action, reward, device=args.device)
@@ -212,7 +227,7 @@ for t in range(T):
     )
 
     ## visualization
-    if t % args.vis_freq == 0 or terminal or t == T-1:
+    if (t % args.vis_freq == 0 or terminal or t == T-1) and not is_atari:
         if not os.path.exists(args.savepath):
             os.makedirs(args.savepath)
 
@@ -228,6 +243,13 @@ for t in range(T):
         renderer.render_rollout(join(args.savepath, f'rollout.mp4'), rollout, fps=80)
         if not terminal:
             mses.append(mse)
+    elif (terminal or t == T-1) and is_atari:
+        import imageio
+        video_name = join(args.savepath, f"rollout.gif")
+        if os.path.exists(video_name):
+            print(f"Overwriting existing replay '{video_name}'. Use another video folder to avoid overwriting")
+        channel = 0
+        imageio.mimsave(video_name, np.array(rollout)[:, channel, :, :], 'GIF', duration=1/30)
 
     if terminal: break
 
