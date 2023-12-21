@@ -238,6 +238,9 @@ class VQStepWiseTransformer(nn.Module):
 
         ## [B x T x obs_dim]
         joined_pred = self.predict(x)
+        is_atari = True
+        if is_atari:  # TODO: debug this part
+            joined_pred[:, :, self.observation_dim:self.observation_dim+self.action_dim] = torch.softmax(joined_pred[:, :, self.observation_dim:self.observation_dim+self.action_dim])
         joined_pred[:, :, -1] = torch.sigmoid(joined_pred[:, :, -1])
         joined_pred[:, :, :self.observation_dim] += torch.reshape(state, shape=[B, 1, -1])
         return joined_pred
@@ -427,6 +430,7 @@ class VQContinuousVAE(nn.Module):
                 torch.ones(1, device=joined_inputs.device) * self.reward_weight,
                 torch.ones(1, device=joined_inputs.device) * self.value_weight,
             ])
+            # TODO: in Atari case separate actions and compute cross entropy loss for them 
             mse = F.mse_loss(pred_trajectory, joined_inputs, reduction='none')*weights[None, None, :]
 
             first_action_loss = self.first_action_weight*F.mse_loss(joined_inputs[:, 0, self.observation_dim:self.observation_dim+self.action_dim],
