@@ -26,11 +26,11 @@ class VAE(nn.Module):
         self.d_max = 3136
 
         self.fc1 = nn.Linear(self.d_max, self.zsize)
-        self.fc2 = nn.Linear(self.d_max, self.zsize)
+        # self.fc2 = nn.Linear(self.d_max, self.zsize)
         self.d1 = nn.Linear(self.zsize, self.d_max)
 
         self.encoder = nn.Sequential(
-            nn.Conv2d(4, 32, kernel_size=8, stride=4, padding=0),
+            nn.Conv2d(channels, 32, kernel_size=8, stride=4, padding=0),
             nn.BatchNorm2d(32),
             nn.ReLU(),
             nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=0),
@@ -48,17 +48,17 @@ class VAE(nn.Module):
             nn.ConvTranspose2d(64, 32, kernel_size=4, stride=2, padding=0),
             nn.BatchNorm2d(32),
             nn.LeakyReLU(0.2),
-            nn.ConvTranspose2d(32, 4, kernel_size=8, stride=4, padding=0),
-            # nn.BatchNorm2d(4),
-            nn.Tanh()
+            nn.ConvTranspose2d(32, channels, kernel_size=8, stride=4, padding=0),
+            # nn.BatchNorm2d(channels),
+            nn.LeakyReLU(0.2)
         )
 
     def encode(self, x):
         x = self.encoder(x)
         x = x.view(x.shape[0], -1)
         h1 = self.fc1(x)
-        h2 = self.fc2(x)
-        return h1, h2
+        # h2 = self.fc2(x)
+        return h1  # , h2
 
     def reparameterize(self, mu, logvar):
         if self.training:
@@ -71,24 +71,28 @@ class VAE(nn.Module):
     def decode(self, x):
         x = self.d1(x)
         x = x.view(x.shape[0], 64, 7, 7)
-        #x = batch_norm(x)
+        # x = batch_norm(x)
         x = F.leaky_relu(x, 0.2)
         x = self.decoder(x)
         return x
     
     @torch.no_grad()
     def get_latent(self, x):
-        mu, logvar = self.encode(x)
-        mu = mu.squeeze()
-        logvar = logvar.squeeze()
-        z = self.reparameterize(mu, logvar)
+        # mu, logvar = self.encode(x)
+        # mu = mu.squeeze()
+        # logvar = logvar.squeeze()
+        # z = self.reparameterize(mu, logvar)
+        z = self.encode(x)
         return z
 
     def forward(self, x):
-        mu, logvar = self.encode(x)
-        mu = mu.squeeze()
-        logvar = logvar.squeeze()
-        z = self.reparameterize(mu, logvar)
+        # mu, logvar = self.encode(x)
+        # mu = mu.squeeze()
+        # logvar = logvar.squeeze()
+        # z = self.reparameterize(mu, logvar)
+        mu = torch.tensor(0.0)
+        logvar = torch.tensor(1.0)
+        z = self.encode(x)
         return self.decode(z), mu, logvar
 
     def weight_init(self, mean, std):

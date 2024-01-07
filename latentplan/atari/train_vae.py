@@ -13,16 +13,18 @@
 # limitations under the License.
 # ==============================================================================
 
-from __future__ import print_function
-import torch.utils.data
-from torch import optim
-from torchvision.utils import save_image
-from vae import VAE
-import numpy as np
+import os
+import argparse
 import time
 import random
-import os
 import wandb
+import numpy as np
+import torch
+from torch import optim
+from torchvision.utils import save_image
+
+from vae import VAE
+from atari_dataset import create_atari_dataset
 
 
 def loss_function(recon_x, x, mu, logvar):
@@ -32,7 +34,8 @@ def loss_function(recon_x, x, mu, logvar):
     # Kingma and Welling. Auto-Encoding Variational Bayes. ICLR, 2014
     # https://arxiv.org/abs/1312.6114
     # 0.5 * sum(1 + log(sigma^2) - mu^2 - sigma^2)
-    KLD = -0.5 * torch.mean(torch.mean(1 + logvar - mu.pow(2) - logvar.exp(), 1))
+    # KLD = -0.5 * torch.mean(torch.mean(1 + logvar - mu.pow(2) - logvar.exp(), 1))
+    KLD = torch.tensor(0.0)
     return BCE, KLD * 0.1
 
 
@@ -48,14 +51,12 @@ def get_batch(data, b_size, device, process=True):
         yield torch.from_numpy(batch).to(device)
 
 
-def get_dataset():
-    DEBUG = True
-    if DEBUG:
+def get_dataset(channels=4, im_size=84, debug=False):
+    if debug:
         import pickle
-        with open('/home/nikita/Projects/RL/decision-transformer/atari/dqn_replay/Breakout/atari_debug.pickle', 'rb') as f:
+        with open('/home/nikitad/projects/def-martin4/nikitad/decision-transformer/atari/dqn_replay/Breakout/atari_debug.pickle', 'rb') as f:
             dataset = pickle.load(f)
     else:
-        from atari_dataset import create_atari_dataset
         num_buffers=50
         num_steps=500000
         game='Breakout'
@@ -63,8 +64,9 @@ def get_dataset():
         data_dir_prefix='/home/nikitad/projects/def-martin4/nikitad/decision-transformer/atari/dqn_replay/'
         dataset = create_atari_dataset(num_buffers, num_steps, game, data_dir_prefix, trajectories_per_buffer)
 
-    dataset = dataset['observations']
-    return np.array(dataset)
+    dataset = np.array(dataset['observations'])
+    dataset = dataset.reshape((-1,channels,im_size,im_size))
+    return dataset
     
 
 def main(args):
@@ -83,16 +85,16 @@ def main(args):
         mode='offline',
     )
 
-    vae = VAE(zsize=z_size)
+    vae = VAE(zsize=z_size, channels=channels, imsize=im_size)
     vae.weight_init(mean=0, std=0.02)
     vae.to(device)
 
     vae_optimizer = optim.Adam(vae.parameters(), lr=lr, betas=(0.5, 0.999), weight_decay=1e-5)
  
-    sample1 = torch.randn(im_size, z_size).to(device)
+    # sample1 = torch.randn(im_size, z_size).to(device)
 
-    data_train = get_dataset()
-    print("Train set size:", len(data_train))
+    data_train = get_dataset(channels=channels, im_size=im_size, debug=False)
+    print("Train set:", data_train.shape)
 
     for epoch in range(n_epoch):
         vae.train()
@@ -124,7 +126,7 @@ def main(args):
 
             os.makedirs('./vae_checkpoints', exist_ok=True)
             os.makedirs('./vae_logs/results_rec', exist_ok=True)
-            os.makedirs('./vae_logs/results_gen', exist_ok=True)
+            # os.makedirs('./vae_logs/results_gen', exist_ok=True)
 
             epoch_end_time = time.time()
             per_epoch_ptime = epoch_end_time - epoch_start_time
@@ -147,11 +149,11 @@ def main(args):
                     resultsample = resultsample.cpu()
                     save_image(resultsample.view(-1, channels, im_size, im_size),
                                './vae_logs/results_rec/sample_' + str(epoch) + "_" + str(i) + '.png')
-                    x_rec = vae.decode(sample1)
-                    resultsample = x_rec * 0.5 + 0.5
-                    resultsample = resultsample.cpu()
-                    save_image(resultsample.view(-1, channels, im_size, im_size),
-                               './vae_logs/results_gen/sample_' + str(epoch) + "_" + str(i) + '.png')
+                    # x_rec = vae.decode(sample1)
+                    # resultsample = x_rec * 0.5 + 0.5
+                    # resultsample = resultsample.cpu()
+                    # save_image(resultsample.view(-1, channels, im_size, im_size),
+                    #            './vae_logs/results_gen/sample_' + str(epoch) + "_" + str(i) + '.png')
 
         if (epoch+1) % 10 == 0:            
             torch.save(vae.state_dict(), f"./vae_checkpoints/VAEmodel_{epoch+1}.pkl")
@@ -159,7 +161,7 @@ def main(args):
     print("Training finish!")
 
 if __name__ == '__main__':
-    import argparse
+    
     parser = argparse.ArgumentParser()
     parser.add_argument("--im_size", type=int, default=84)
     parser.add_argument("--channels", type=int, default=4)
