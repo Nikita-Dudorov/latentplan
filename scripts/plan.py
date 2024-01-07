@@ -1,7 +1,9 @@
 import json
 from os.path import join
 import os
+import torch
 import numpy as np
+import imageio
 
 import latentplan.utils as utils
 import latentplan.datasets as datasets
@@ -48,7 +50,6 @@ is_atari = args.task_type == 'atari'
 env = datasets.load_environment(args.dataset, seed=np.random.randint(100,1000))
 dataset = utils.load_from_config(args.logbase, args.dataset, args.exp_name,
         'data_config.pkl')
-import torch
 dataset.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
@@ -194,7 +195,7 @@ for t in range(T):
     action = extract_actions(sequence_recon, feature_dim, action_dim, t=0)
     if is_atari:
         # env_action = 1 if t == 0 else np.argmax(action)  # pick action with highest value
-        env_action = action / action.sum()  # normalize to get probabilities
+        # env_action = action / action.sum()  # normalize to get probabilities
         env_action = np.random.choice(np.arange(len(env_action)), p=env_action)  # sample from categorical distribution
     if dataset.normalized_raw:
         action = dataset.denormalize_actions(action)
@@ -244,7 +245,6 @@ for t in range(T):
         if not terminal:
             mses.append(mse)
     elif (terminal or t == T-1) and is_atari:
-        import imageio
         video_name = join(args.savepath, f"rollout.gif")
         if os.path.exists(video_name):
             print(f"Overwriting existing replay '{video_name}'. Use another video folder to avoid overwriting")
