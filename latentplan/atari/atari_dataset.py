@@ -104,7 +104,7 @@ def create_atari_dataset(num_buffers, num_steps, game, data_dir_prefix, trajecto
 
 
 def atari_obs_embed(observations, device):
-    checkpoint_path = '/home/nikitad/projects/def-martin4/nikitad/vae_checkpoints/VAEmodel_20.pkl'
+    checkpoint_path = '/home/nikitad/projects/def-martin4/nikitad/vae_checkpoints/VAEmodel_40.pkl'
     latent_dim = 512
     b_size = 128
     obs_encoder = VAE(latent_dim)
