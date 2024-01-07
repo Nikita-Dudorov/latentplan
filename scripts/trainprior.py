@@ -104,7 +104,7 @@ n_epochs = int(1e6 / len(dataset) * args.n_epochs_ref)
 save_freq = int(n_epochs // args.n_saves)
 wandb.init(
     project="latentPlanning", 
-    name=args.dataset + '-' + 'prior' + '-' + np.random.randint(int(1e4), int(1e5)),
+    name=args.dataset + '-' + 'prior' + '-' + str(np.random.randint(int(1e4), int(1e5))),
     config=args, 
     tags=[args.exp_name, args.tag, "prior"],
     mode='offline',
