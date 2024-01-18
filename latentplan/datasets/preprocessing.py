@@ -21,13 +21,9 @@ def ant_preprocess_fn(observations):
 
 def breakout_preprocess_fn(observations):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    # print(f"*** Atari frames: {observations.shape}***")
-    if observations.ndim != 4:  # add batch axis
-        observations = observations.reshape((1,) + observations.shape) 
     observations = observations.astype(np.float32)
     observations /= 255
     observations = atari_obs_embed(observations, device)
-    # print(f"*** Atari frame embeddings: {observations.shape}***")
     return observations
 
 def vmap(fn):
