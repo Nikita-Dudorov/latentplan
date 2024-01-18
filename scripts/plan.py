@@ -195,8 +195,7 @@ for t in range(T):
     action = extract_actions(sequence_recon, feature_dim, action_dim, t=0)
     if is_atari:
         # env_action = 1 if t == 0 else np.argmax(action)  # pick action with highest value
-        # env_action = action / action.sum()  # normalize to get probabilities
-        env_action = np.random.choice(np.arange(len(env_action)), p=env_action)  # sample from categorical distribution
+        env_action = np.random.choice(np.arange(len(action)), p=action)  # sample from categorical distribution
     if dataset.normalized_raw:
         action = dataset.denormalize_actions(action)
         sequence_recon = dataset.denormalize_joined(sequence_recon)
