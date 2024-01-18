@@ -94,7 +94,7 @@ class AtariEnv():
     def close(self):
         cv2.destroyAllWindows()
 
-    def get_dataset(self, debug=True, **kwargs):
+    def get_dataset(self, debug=False, **kwargs):
         if debug:
             import pickle
             with open('/home/nikitad/projects/def-martin4/nikitad/decision-transformer/atari/dqn_replay/Breakout/atari_debug.pickle', 'rb') as f:
@@ -102,7 +102,7 @@ class AtariEnv():
         else:
             num_buffers=50
             num_steps=500000
-            game=self.game
+            game=self.name
             trajectories_per_buffer=10
             data_dir_prefix='/home/nikitad/projects/def-martin4/nikitad/decision-transformer/atari/dqn_replay/'
             dataset = create_atari_dataset(num_buffers, num_steps, game, data_dir_prefix, trajectories_per_buffer)
