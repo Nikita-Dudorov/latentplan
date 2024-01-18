@@ -239,8 +239,8 @@ class VQStepWiseTransformer(nn.Module):
         ## [B x T x obs_dim]
         joined_pred = self.predict(x)
         is_atari = True
-        if is_atari:  # TODO: debug this part
-            joined_pred[:, :, self.observation_dim:self.observation_dim+self.action_dim] = torch.softmax(joined_pred[:, :, self.observation_dim:self.observation_dim+self.action_dim])
+        if is_atari:
+            joined_pred[:, :, self.observation_dim:self.observation_dim+self.action_dim] = torch.softmax(joined_pred[:, :, self.observation_dim:self.observation_dim+self.action_dim], -1)
         joined_pred[:, :, -1] = torch.sigmoid(joined_pred[:, :, -1])
         joined_pred[:, :, :self.observation_dim] += torch.reshape(state, shape=[B, 1, -1])
         return joined_pred
