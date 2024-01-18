@@ -3,12 +3,12 @@
 # *** bash script to run experiments on computecanada *** 
 
 # job settings
-#SBATCH --job-name=tap-atari-eval
+#SBATCH --job-name=tap-atari-inference
 #SBATCH --account=def-martin4
 #SBATCH --gpus-per-node=1
 #SBATCH --cpus-per-task=6
 #SBATCH --mem=128000M
-#SBATCH --time=0-05:00
+#SBATCH --time=1-00:00
 #SBATCH --output=%x-%j.out
 #SBATCH --error=%x-%j.err
 
@@ -37,6 +37,8 @@ path=latentplan
 name=T-1
 datasets=(Breakout)
 device=cuda
+
+# python3 $path/latentplan/atari/train_vae.py --device $device
 
 for round in {1..1}; do
   for data in ${datasets[@]}; do
