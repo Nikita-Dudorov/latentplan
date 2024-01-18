@@ -106,12 +106,16 @@ def create_atari_dataset(num_buffers, num_steps, game, data_dir_prefix, trajecto
 def atari_obs_embed(observations, device):
     checkpoint_path = '/home/nikitad/projects/def-martin4/nikitad/vae_checkpoints/VAEmodel_40.pkl'
     latent_dim = 512
+    channels = 4
+    im_size = 84
     b_size = 128
-    obs_encoder = VAE(latent_dim)
+    obs_encoder = VAE(zsize=latent_dim, channels=channels, imsize=im_size)
     obs_encoder.load_state_dict(torch.load(checkpoint_path, map_location=torch.device(device)))
     obs_encoder.to(device)
     obs_encoder.eval()
 
+    if observations.ndim != 4:  # add batch axis
+        observations = observations.reshape((1,) + observations.shape) 
     n_oob = len(observations) % b_size
     b = torch.from_numpy(observations[-n_oob:]).to(device)
     obs_emb = obs_encoder.get_latent(b).cpu().numpy()
@@ -120,4 +124,4 @@ def atari_obs_embed(observations, device):
         embeddings = obs_encoder.get_latent(b).cpu().numpy()
         obs_emb = np.vstack((obs_emb, embeddings))
 
-    return obs_emb
+    return obs_emb.squeeze()
