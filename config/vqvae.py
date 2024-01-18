@@ -106,8 +106,9 @@ base = {
 Breakout = {
     'train': {
         "max_path_length": 5000,  # based on dataset longest trajectory
-        "normalize": False,  # TODO not clear what exactly we normalize
-        "disable_goal": True,  # TODO what is this
+        "normalize": True,  # TODO not clear what exactly we normalize
+        "normalize_reward": True,
+        "disable_goal": False,  # TODO what is this
     },
     'plan': {
         'horizon': 24,
